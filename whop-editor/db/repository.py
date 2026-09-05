@@ -629,13 +629,122 @@ class DatabaseRepository:
                     job_id
                 ))
                 row = cur.fetchone()
-                if not row:
-                    raise EntityNotFoundError(f"Job '{job_id}' not found.")
                 return {"id": row[0], "status": row[1], "assigned_worker_id": row[2], "retry_count": row[3], "error_message": row[4]}
         except Exception as e:
             raise RepositoryError(f"Failed to update job '{job_id}': {e}") from e
 
+    def claim_next_job(
+        self,
+        worker_id: str,
+        supported_job_types: Optional[List[str]] = None,
+        stale_timeout_sec: int = 600
+    ) -> Optional[Dict[str, Any]]:
+        """
+        Transactionally claims the next available queued job using SELECT ... FOR UPDATE SKIP LOCKED.
+        Safely recovers stale jobs if any exceed stale_timeout_sec.
+        """
+        now = _now_iso()
+        try:
+            with transaction_scope() as cur:
+                # 1. Recover stale jobs first within same transaction
+                stale_sql = """
+                    UPDATE jobs
+                    SET status = 'queued',
+                        assigned_worker_id = NULL,
+                        error_message = 'Recovered from stale worker lease',
+                        retry_count = retry_count + 1
+                    WHERE status IN ('claimed', 'running')
+                      AND started_at IS NOT NULL
+                      AND started_at != ''
+                      AND started_at::TIMESTAMPTZ < (NOW() - (%s || ' seconds')::INTERVAL)
+                      AND retry_count < max_retries;
+                """
+                cur.execute(stale_sql, (stale_timeout_sec,))
+
+                # 2. Select next job FOR UPDATE SKIP LOCKED
+                if supported_job_types:
+                    select_sql = """
+                        SELECT id, campaign_id, job_type, status, assigned_worker_id, input_data_json, output_data_json,
+                               retry_count, max_retries, error_message, created_at, started_at, completed_at
+                        FROM jobs
+                        WHERE status IN ('queued', 'pending')
+                          AND job_type = ANY(%s)
+                        ORDER BY created_at ASC
+                        FOR UPDATE SKIP LOCKED
+                        LIMIT 1;
+                    """
+                    cur.execute(select_sql, (supported_job_types,))
+                else:
+                    select_sql = """
+                        SELECT id, campaign_id, job_type, status, assigned_worker_id, input_data_json, output_data_json,
+                               retry_count, max_retries, error_message, created_at, started_at, completed_at
+                        FROM jobs
+                        WHERE status IN ('queued', 'pending')
+                        ORDER BY created_at ASC
+                        FOR UPDATE SKIP LOCKED
+                        LIMIT 1;
+                    """
+                    cur.execute(select_sql)
+
+                row = cur.fetchone()
+                if not row:
+                    return None
+
+                job_id = row[0]
+                # 3. Transition to claimed
+                update_sql = """
+                    UPDATE jobs
+                    SET status = 'claimed',
+                        assigned_worker_id = %s,
+                        started_at = %s
+                    WHERE id = %s;
+                """
+                cur.execute(update_sql, (worker_id, now, job_id))
+
+                return {
+                    "id": row[0],
+                    "campaign_id": row[1],
+                    "job_type": row[2],
+                    "status": "claimed",
+                    "assigned_worker_id": worker_id,
+                    "input_data": json.loads(row[5]) if row[5] else {},
+                    "output_data": json.loads(row[6]) if row[6] else {},
+                    "retry_count": row[7],
+                    "max_retries": row[8],
+                    "error_message": row[9],
+                    "created_at": row[10],
+                    "started_at": now,
+                    "completed_at": row[12]
+                }
+        except Exception as e:
+            raise RepositoryError(f"Failed to claim next job: {e}") from e
+
+    def recover_stale_jobs(self, stale_timeout_sec: int = 600) -> int:
+        """
+        Explicitly recovers any jobs stuck in 'claimed' or 'running' state beyond timeout.
+        Returns number of recovered jobs.
+        """
+        stale_sql = """
+            UPDATE jobs
+            SET status = 'queued',
+                assigned_worker_id = NULL,
+                error_message = 'Explicitly recovered from stale worker lease',
+                retry_count = retry_count + 1
+            WHERE status IN ('claimed', 'running')
+              AND started_at IS NOT NULL
+              AND started_at != ''
+              AND started_at::TIMESTAMPTZ < (NOW() - (%s || ' seconds')::INTERVAL)
+              AND retry_count < max_retries;
+        """
+        try:
+            with transaction_scope() as cur:
+                cur.execute(stale_sql, (stale_timeout_sec,))
+                return cur.rowcount
+        except Exception as e:
+            raise RepositoryError(f"Failed to recover stale jobs: {e}") from e
+
     # --- REVIEWS ---
+
     def record_review(
         self,
         review_id: str,

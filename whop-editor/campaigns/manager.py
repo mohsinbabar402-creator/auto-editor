@@ -25,6 +25,18 @@ class CampaignManager:
         else:
             self.worker_pool = worker_pool
 
+        # Ensure workers in pool are registered in PostgreSQL workers table
+        for w in getattr(self.worker_pool, "_workers", {}).values():
+            try:
+                self.repo.register_worker(
+                    worker_id=w.id,
+                    provider=w.provider,
+                    capabilities=w.capabilities,
+                    status="available"
+                )
+            except Exception as e:
+                logger.debug(f"Could not register worker {w.id} in DB: {e}")
+
     def create_campaign(
         self,
         project_id: str,
@@ -35,11 +47,14 @@ class CampaignManager:
         # Ensure project exists
         proj = self.repo.get_project(project_id)
         if not proj:
+            proj_name = (config.get("project_name") or name) if config else name
+            proj_desc = (config.get("niche_description") or f"Campaign production for {name}") if config else f"Campaign production for {name}"
             self.repo.create_project(
                 project_id=project_id,
-                name="Whop Short-Form Creator Education",
-                niche_description="Educational video shorts for creator communities and SaaS founders."
+                name=proj_name,
+                niche_description=proj_desc
             )
+
 
         if campaign_id:
             existing = self.get_campaign(campaign_id)
@@ -108,13 +123,20 @@ class CampaignManager:
         target_word: Optional[str] = None,
         scale: Optional[float] = None,
         duration_ms: Optional[int] = None,
-        output_filename: Optional[str] = None
+        output_filename: Optional[str] = None,
+        output_dir: Optional[str | Path] = None,
+        job_id: Optional[str] = None
     ) -> ProductionJob:
         camp = self.get_campaign(campaign_id)
         if not camp:
             raise ValueError(f"Campaign '{campaign_id}' does not exist.")
 
-        j_id = f"job_{uuid.uuid4().hex[:10]}"
+        j_id = job_id or f"job_{uuid.uuid4().hex[:10]}"
+        
+        from config import settings
+        resolved_out_dir = Path(output_dir).resolve() if output_dir else (settings.DATA_DIR / "output" / camp.project_id / campaign_id / j_id)
+        resolved_out_dir.mkdir(parents=True, exist_ok=True)
+
         input_data = {
             "input_video_path": str(Path(input_video_path).resolve()),
             "project_id": camp.project_id,
@@ -122,7 +144,8 @@ class CampaignManager:
             "target_word": target_word,
             "scale": scale,
             "duration_ms": duration_ms,
-            "output_filename": output_filename
+            "output_filename": output_filename or "version_1.mp4",
+            "output_dir": str(resolved_out_dir)
         }
 
         record = self.repo.create_job(
@@ -130,8 +153,9 @@ class CampaignManager:
             campaign_id=campaign_id,
             job_type=job_type,
             input_data=input_data,
-            status="pending"
+            status="queued"
         )
+
         self.repo.log_audit(
             audit_id=f"audit_job_{uuid.uuid4().hex[:8]}",
             action="CREATE_JOB",
@@ -173,6 +197,18 @@ class CampaignManager:
 
         # Submit to worker pool
         executed_job = self.worker_pool.submit_job(job)
+
+        # Ensure assigned worker is registered in DB to satisfy foreign key constraint
+        if executed_job.assigned_worker_id:
+            try:
+                self.repo.register_worker(
+                    worker_id=executed_job.assigned_worker_id,
+                    provider="antigravity",
+                    capabilities=["PRODUCTION_EDIT", "RENDER"],
+                    status="available"
+                )
+            except Exception:
+                pass
 
         # Persist updated status
         self.repo.update_job(

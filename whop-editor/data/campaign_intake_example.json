@@ -1,0 +1,16 @@
+{
+  "campaign_name": "Whop Creator Rewards September Sprint",
+  "campaign_id": "camp_whop_rewards_sep",
+  "platform": "youtube_shorts",
+  "content_type": "short_form_talking_head",
+  "aspect_ratio": "9:16",
+  "duration_min": 10,
+  "duration_max": 60,
+  "quality_gate": 7.5,
+  "output_count": 1,
+  "required_mentions": ["@whop"],
+  "required_hashtags": ["#whop", "#creators"],
+  "prohibited_content": ["offensive language", "watermarks"],
+  "submission_method": "direct_upload",
+  "notes": "Produce viral punchy talking-head short form video highlighting creator economy tools."
+}

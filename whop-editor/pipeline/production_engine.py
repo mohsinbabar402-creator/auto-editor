@@ -68,7 +68,9 @@ class ProductionEngine:
         output_filename: Optional[str] = None,
         target_word: Optional[str] = None,
         scale: Optional[float] = None,
-        duration_ms: Optional[int] = None
+        duration_ms: Optional[int] = None,
+        output_dir: Optional[str | Path] = None,
+        **kwargs
     ) -> ProductionEngineResult:
         source_path = Path(source_video_path).resolve()
         if not source_path.exists():
@@ -84,7 +86,7 @@ class ProductionEngine:
         learned_params = self.knowledge_engine.get_validated_parameters(project_id=campaign.project_id)
         current_scale = scale if scale is not None else learned_params.get("scale", 1.18)
         current_duration_ms = duration_ms if duration_ms is not None else learned_params.get("duration_ms", 850)
-        current_target_word = target_word or learned_params.get("target_word", "differential")
+        current_target_word = target_word or learned_params.get("target_word")
 
         job = self.campaign_mgr.create_production_job(
             campaign_id=campaign_id,
@@ -93,7 +95,8 @@ class ProductionEngine:
             target_word=current_target_word,
             scale=current_scale,
             duration_ms=current_duration_ms,
-            output_filename=output_filename
+            output_filename=output_filename,
+            output_dir=output_dir
         )
 
         engine_result = ProductionEngineResult(
@@ -152,11 +155,20 @@ class ProductionEngine:
             # Review via Gemini Browser / Reviewer ON THE ACTUAL RENDERED MP4
             logger.info(f"Submitting rendered video [{current_video_path.name}] to Reviewer...")
             try:
-                review = self.reviewer.review_video(
-                    video_path=current_video_path,
-                    scene_instructions=scene_instructions,
-                    campaign_context=f"Campaign: {campaign.name} | Project: {campaign.project_id} (Iteration {attempt})"
-                )
+                try:
+                    review = self.reviewer.review_video(
+                        video_path=current_video_path,
+                        scene_instructions=scene_instructions,
+                        campaign_context=f"Campaign: {campaign.name} | Project: {campaign.project_id} (Iteration {attempt})",
+                        job_id=job.id,
+                        attempt=attempt
+                    )
+                except TypeError:
+                    review = self.reviewer.review_video(
+                        video_path=current_video_path,
+                        scene_instructions=scene_instructions,
+                        campaign_context=f"Campaign: {campaign.name} | Project: {campaign.project_id} (Iteration {attempt})"
+                    )
             except Exception as e:
                 logger.error(f"Reviewer execution failed on attempt {attempt}: {e}")
                 self.repo.record_review(
@@ -361,13 +373,15 @@ class ProductionEngine:
             # Update job input data with corrections for regeneration
             job.input_data["scale"] = current_scale
             job.input_data["duration_ms"] = current_duration_ms
+            job.input_data["output_filename"] = f"version_{attempt + 1}.mp4"
             job.retry_count = attempt
-            job.status = JobStatus.PENDING
+            job.status = JobStatus.QUEUED
             self.repo.update_job(
                 job_id=job.id,
-                status=JobStatus.PENDING,
+                status=JobStatus.QUEUED,
                 input_data=job.input_data,
                 retry_count=attempt
             )
+
 
         return engine_result

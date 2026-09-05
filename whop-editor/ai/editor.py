@@ -32,22 +32,45 @@ class AIEditor:
     def propose_punch_in(
         self,
         transcript: NormalizedTranscript,
-        project_niche: str = "Whop short-form creator education"
+        project_niche: str = "Whop short-form creator education",
+        target_word: Optional[str] = None,
+        scale: Optional[float] = None,
+        duration_ms: Optional[int] = None,
+        **kwargs
     ) -> Dict[str, Any]:
         """
-        Asks Gemini to identify the single most impactful word token for a punch-in zoom.
-        Falls back to deterministic heuristic emphasis if API key is not configured.
+        Identifies the single most impactful word token for a punch-in zoom.
+        If target_word is given, locates that specific word in transcript.
+        Otherwise asks Gemini (or uses deterministic heuristic).
         """
         if len(transcript) == 0:
             raise AIEditorError("Cannot propose an edit for an empty transcript.")
 
+        # If a specific target word was provided by campaign/job, search for it
+        if target_word:
+            clean_target = target_word.strip().lower()
+            for w in transcript.words:
+                clean_w = re.sub(r"[^\w]", "", w.word.lower())
+                if clean_w == clean_target:
+                    return {
+                        "word_index": w.index,
+                        "scale": scale if scale is not None else 1.18,
+                        "duration_ms": duration_ms if duration_ms is not None else 850
+                    }
+
         # If no Gemini API key is configured, use deterministic linguistic heuristic
         if not self.api_key:
             logger.warning("No GOOGLE_API_KEY configured. Using deterministic fallback selection.")
-            return self._heuristic_fallback_proposal(transcript)
+            prop = self._heuristic_fallback_proposal(transcript)
+            if scale is not None:
+                prop["scale"] = scale
+            if duration_ms is not None:
+                prop["duration_ms"] = duration_ms
+            return prop
 
         # Build clean, unambiguous prompt
         tokens_context = transcript.to_prompt_context()
+
         prompt = (
             f"You are a master short-form video editor for: {project_niche}.\n"
             f"Analyze the following numbered transcript tokens:\n"

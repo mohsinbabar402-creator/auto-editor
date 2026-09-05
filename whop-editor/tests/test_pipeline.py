@@ -11,7 +11,7 @@ from db.repository import DatabaseRepository
 
 class MockAIEditor(AIEditor):
     """Deterministic AI Editor for test runs."""
-    def propose_punch_in(self, transcript, project_niche=""):
+    def propose_punch_in(self, transcript, project_niche="", **kwargs):
         # Predictably select the second word with 1.15 scale
         target_idx = 1 if len(transcript) > 1 else 0
         return {

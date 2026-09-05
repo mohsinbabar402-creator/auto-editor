@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
 from collections import deque
 import logging
+from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from workers.models import Worker, WorkerStatus, ProductionJob, JobStatus, utc_now_iso
@@ -70,12 +71,24 @@ class AntigravityWorker(BaseWorker):
                 scale = job.input_data.get("scale")
                 duration_ms = job.input_data.get("duration_ms")
                 output_filename = job.input_data.get("output_filename")
+                project_id = job.input_data.get("project_id", "default_proj")
+                output_dir = job.input_data.get("output_dir")
+                if not output_dir:
+                    from config import settings
+                    output_dir = settings.DATA_DIR / "output" / project_id / campaign_id / job.id
+                else:
+                    output_dir = Path(output_dir).resolve()
 
                 pipeline_res = run_stage1_pipeline(
                     input_video_path=input_video,
-                    project_id=job.input_data.get("project_id", "proj_whop_shortform"),
-                    output_filename=output_filename
+                    project_id=project_id,
+                    output_filename=output_filename,
+                    output_dir=output_dir,
+                    target_word=target_word,
+                    scale=scale,
+                    duration_ms=duration_ms
                 )
+
                 if not pipeline_res.success:
                     raise WorkerExecutionError(f"Pipeline error at [{pipeline_res.stage_failed}]: {pipeline_res.error_message}")
 

@@ -54,8 +54,13 @@ def run_stage1_pipeline(
     project_id: str = "proj_whop_shortform",
     repo: Optional[DatabaseRepository] = None,
     ai_editor: Optional[AIEditor] = None,
-    output_filename: Optional[str] = None
+    output_filename: Optional[str] = None,
+    output_dir: Optional[Path] = None,
+    target_word: Optional[str] = None,
+    scale: Optional[float] = None,
+    duration_ms: Optional[int] = None
 ) -> PipelineResult:
+
     """
     Executes the complete Stage-1 vertical slice:
     Video -> Whisper -> AI Decision -> Validation -> FFmpeg Render -> QC -> PostgreSQL -> Audit
@@ -142,8 +147,12 @@ def run_stage1_pipeline(
     try:
         raw_proposal = active_ai.propose_punch_in(
             transcript=normalized,
-            project_niche=proj.get("niche_description", "") if proj else ""
+            project_niche=proj.get("niche_description", "") if proj else "",
+            target_word=target_word,
+            scale=scale,
+            duration_ms=duration_ms
         )
+
     except AIEditorError as e:
         active_repo.update_video_status(v_id, "failed_ai_proposal")
         result.stage_failed = "AI_PROPOSAL"
@@ -186,8 +195,11 @@ def run_stage1_pipeline(
 
     # 8. Stage: FFmpeg Render
     logger.info("=== STAGE 6: Deterministic FFmpeg Render ===")
+    target_dir = Path(output_dir).resolve() if output_dir else settings.OUTPUT_DIR
+    target_dir.mkdir(parents=True, exist_ok=True)
     out_name = output_filename or f"{v_id}_punchin.mp4"
-    out_path = settings.OUTPUT_DIR / out_name
+    out_path = target_dir / out_name
+
     try:
         render_punch_in(
             input_path=in_path,

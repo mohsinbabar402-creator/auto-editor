@@ -27,7 +27,9 @@ class BaseVideoReviewer(ABC):
         self,
         video_path: str | Path,
         scene_instructions: str,
-        campaign_context: Optional[str] = None
+        campaign_context: Optional[str] = None,
+        job_id: Optional[str] = None,
+        **kwargs
     ) -> StructuredReview:
         pass
 
@@ -62,13 +64,17 @@ class GeminiBrowserReviewer(BaseVideoReviewer):
         self,
         video_path: str | Path,
         scene_instructions: str,
-        campaign_context: Optional[str] = None
+        campaign_context: Optional[str] = None,
+        job_id: Optional[str] = None,
+        **kwargs
     ) -> StructuredReview:
         res = self.reviewer.review_video(
             video_path=video_path,
             profile_id=self.profile_id,
             scene_instructions=scene_instructions,
-            campaign_context=campaign_context
+            campaign_context=campaign_context,
+            job_id=job_id,
+            **kwargs
         )
         return parse_and_validate_gemini_review(res["raw_response"])
 
@@ -85,7 +91,9 @@ class MockVideoReviewer(BaseVideoReviewer):
         self,
         video_path: str | Path,
         scene_instructions: str,
-        campaign_context: Optional[str] = None
+        campaign_context: Optional[str] = None,
+        job_id: Optional[str] = None,
+        **kwargs
     ) -> StructuredReview:
         self.call_count += 1
         if self.custom_review:

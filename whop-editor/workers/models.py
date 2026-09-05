@@ -13,9 +13,14 @@ class WorkerStatus(str, Enum):
 
 
 class JobStatus(str, Enum):
+    QUEUED = "queued"
     PENDING = "pending"
+    CLAIMED = "claimed"
     RUNNING = "running"
+    QA = "qa"
+    CORRECTING = "correcting"
     COMPLETED = "completed"
+    NEEDS_REVIEW = "needs_review"
     FAILED = "failed"
     CANCELLED = "cancelled"
 

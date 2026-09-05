@@ -72,7 +72,7 @@ class GeminiReviewer:
             raise FileNotFoundError(f"Target video does not exist: {v_path}")
 
         # 1. Acquire eligible authenticated profile
-        profile = self.registry.acquire_profile(capability="gemini", preferred_id=profile_id)
+        profile = self.registry.acquire_profile(capability="gemini", preferred_id=profile_id, lease_owner=job_id)
         if not profile:
             raise GeminiAuthenticationRequiredError(
                 f"No authenticated browser profile available. Profile '{profile_id or 'flow_profile_2'}' requires authentication."
