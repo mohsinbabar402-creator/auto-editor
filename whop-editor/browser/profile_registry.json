@@ -1,0 +1,67 @@
+[
+  {
+    "profile_id": "flow_profile_1",
+    "user_data_dir": "C:\\Users\\ice\\Desktop\\youtube shorts project\\whop-editor\\browser\\flow_profile_1",
+    "auth_status": "AUTH_REQUIRED",
+    "account_email": "mohsinoctal777@gmail.com",
+    "flow_capable": true,
+    "gemini_capable": true,
+    "assigned_worker_id": null,
+    "enabled": true,
+    "last_successful_launch": null,
+    "last_successful_gemini_review": null,
+    "current_status": "IDLE"
+  },
+  {
+    "profile_id": "flow_profile_2",
+    "user_data_dir": "C:\\Users\\ice\\Desktop\\youtube shorts project\\whop-editor\\browser\\flow_profile_2",
+    "auth_status": "AUTHENTICATED",
+    "account_email": "mohsinoctal777@gmail.com",
+    "flow_capable": true,
+    "gemini_capable": true,
+    "assigned_worker_id": null,
+    "enabled": true,
+    "last_successful_launch": "2026-09-03T20:42:12Z",
+    "last_successful_gemini_review": null,
+    "current_status": "IDLE"
+  },
+  {
+    "profile_id": "flow_profile_3",
+    "user_data_dir": "C:\\Users\\ice\\Desktop\\youtube shorts project\\whop-editor\\browser\\flow_profile_3",
+    "auth_status": "AUTH_REQUIRED",
+    "account_email": "mohsinmughal1771@gmail.com",
+    "flow_capable": true,
+    "gemini_capable": true,
+    "assigned_worker_id": null,
+    "enabled": true,
+    "last_successful_launch": null,
+    "last_successful_gemini_review": null,
+    "current_status": "IDLE"
+  },
+  {
+    "profile_id": "flow_profile_4",
+    "user_data_dir": "C:\\Users\\ice\\Desktop\\youtube shorts project\\whop-editor\\browser\\flow_profile_4",
+    "auth_status": "AUTH_REQUIRED",
+    "account_email": "blazingsoul451@gmail.com",
+    "flow_capable": true,
+    "gemini_capable": true,
+    "assigned_worker_id": null,
+    "enabled": true,
+    "last_successful_launch": null,
+    "last_successful_gemini_review": null,
+    "current_status": "IDLE"
+  },
+  {
+    "profile_id": "flow_profile_5",
+    "user_data_dir": "C:\\Users\\ice\\Desktop\\youtube shorts project\\whop-editor\\browser\\flow_profile_5",
+    "auth_status": "AUTH_REQUIRED",
+    "account_email": "zestify1771@gmail.com",
+    "flow_capable": true,
+    "gemini_capable": true,
+    "assigned_worker_id": null,
+    "enabled": true,
+    "last_successful_launch": null,
+    "last_successful_gemini_review": null,
+    "current_status": "IDLE"
+  }
+]

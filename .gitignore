@@ -1,0 +1,87 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Database files & journals
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Local credentials & secrets
+*.pem
+*.key
+*.token
+*.secret
+credentials*.json
+client_secret*.json
+oauth_token*.json
+
+# Logs, temporary files & test artifacts
+*.log
+*.tmp
+*.temp
+scratch/
+.system_generated/
+.tempmediaStorage/
+.user_uploaded/
+temp_test/
+test_output/
+
+# Media & local storage
+*.mp4
+*.mkv
+*.mov
+*.wav
+*.mp3
+*.png
+*.jpg
+*.jpeg
+*.bat
+
+# Local browser profiles & project workspaces
+browser/
+!browser/profile_registry.json
+!whop-editor/browser/
+browser_backups/
+live_accounts_audit.json
+verified_sessions.json
+chrome_flow_profile/
+projects/
+mission_control.json
+elevenlabs_pool.json
+
+
