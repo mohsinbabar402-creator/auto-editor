@@ -1,0 +1,33 @@
+{
+  "campaign_name": "The Most Dangerous Games - MrBeast & James Patterson",
+  "campaign_id": "camp_mrbeast_dangerous_games",
+  "platform": "youtube_shorts",
+  "content_type": "creator_rewards_challenge",
+  "aspect_ratio": "9:16",
+  "duration_min": 8,
+  "duration_max": 60,
+  "quality_gate": 7.5,
+  "output_count": 2,
+  "required_hashtags": [
+    "#TheMostDangerousGames",
+    "#MrBeastPartner"
+  ],
+  "required_mentions": [],
+  "required_text": [
+    "The Most Dangerous Games",
+    "$1,000,000",
+    "September 14",
+    "themostdangerousgames.com"
+  ],
+  "prohibited_content": [
+    "negative content",
+    "misrepresentation",
+    "collab posts",
+    "story posts",
+    "unaffiliated logos",
+    "paid ads boost",
+    "botting"
+  ],
+  "submission_method": "vyro_campaign_submission",
+  "notes": "Promote The Most Dangerous Games novel by MrBeast and James Patterson. Drive book sales, direct viewers to $1,000,000 reader giveaway at themostdangerousgames.com. Emphasize that the first challenge drops September 14 and the book has all the answers."
+}
