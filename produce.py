@@ -152,7 +152,12 @@ def load_campaign_intake(
     camp_path = Path(campaign_arg)
     raw_text = ""
 
-    if camp_path.exists() and camp_path.is_file():
+    if camp_path.suffix.lower() in (".json", ".yaml", ".yml", ".txt"):
+        if not camp_path.exists() or not camp_path.is_file():
+            raise FileNotFoundError(f"Campaign intake file not found at: {camp_path.resolve()}")
+        logger.info(f"Loading campaign intake from file: {camp_path}")
+        raw_text = camp_path.read_text(encoding="utf-8")
+    elif camp_path.exists() and camp_path.is_file():
         logger.info(f"Loading campaign intake from file: {camp_path}")
         raw_text = camp_path.read_text(encoding="utf-8")
     else:
